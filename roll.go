@@ -16,6 +16,7 @@ type roll struct {
 	TimesToRoll int
 	RollsGenerated []int
 	RollsUsed []int
+	AdditiveValue int
 	Result int
 }
 
@@ -55,10 +56,11 @@ func (r *roll) ConvertToString(p bool) (s string) {
 		pStr = "\n\t"
 	}
 	s = fmt.Sprintf("ROLL -- %sSides: %d, %sTimesToRoll: %d, " +
-		"%sOptions: [%s], %sResult: %d, %sRollsUsed: %s, %sRollsGenerated: %s\n",
+		"%sOptions: [%s], %sAdditiveValue: %d, %sResult: %d, %sRollsUsed: %s, %sRollsGenerated: %s\n",
 		pStr, r.Sides,
 		pStr, r.TimesToRoll,
 		pStr, strings.TrimSpace(r.Options),
+		pStr, r.AdditiveValue,
 		pStr, r.Result,
 		pStr, usedStr,
 		pStr, genStr)
@@ -75,7 +77,6 @@ func getRolls(sides int, timesToRoll int) (*[]int, error) {
 		t := int(value.Int64()) +1  // +1 because dice start at 1 not 0
 		rolls = append(rolls, t )
 	}
-
     return &rolls, nil
 }
 
@@ -113,9 +114,9 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 		switch optSlice[0] {
 		case "keep":
 			if optSlice[1] == "highest" {
-				sortDirection = "descending"
-			} else if optSlice[1] == "lowest" {
 				sortDirection = "ascending"
+			} else if optSlice[1] == "lowest" {
+				sortDirection = "descending"
 			} else {
 				panic("Unrecognized string for which values to keep.")
 			}
@@ -123,12 +124,12 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 			if err != nil {
 				panic(err)
 			}
-			keepLogStr = fmt.Sprintf("keep: %d; ",keepValue)
+			keepLogStr = fmt.Sprintf("keep %s: %d; ",optSlice[1], keepValue)
 		case "drop":
 			if optSlice[1] == "highest" {
-				sortDirection = "descending"
-			} else if optSlice[1] == "lowest" {
 				sortDirection = "ascending"
+			} else if optSlice[1] == "lowest" {
+				sortDirection = "descending"
 			} else {
 				panic("Unrecognized string for which values to keep.")
 			}
@@ -138,7 +139,7 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 				panic(err)
 			}
 
-			keepLogStr = fmt.Sprintf("drop: %d; ",tmpInt)
+			keepLogStr = fmt.Sprintf("drop %s: %d; ",optSlice[1],tmpInt)
 			if keepValue > tmpInt {
 				keepValue -= tmpInt
 			} else {
@@ -151,49 +152,51 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 				panic(err)
 			}
 			additiveValue += tValue
-			additiveLogStr = fmt.Sprintf("%sadd: %d; ",additiveLogStr,additiveValue)
+			additiveLogStr = fmt.Sprintf("%sadd: %d; ",additiveLogStr,tValue)
 		case "subtract":
 			var tValue int
-			tType := "subtract"
 			tValue, err = strconv.Atoi(optSlice[1])
 			additiveValue -= tValue
 			if err != nil {
 				panic(err)
 			}
 
-			if additiveValue < 0 {
-				tType = "add"
-			}
-			additiveLogStr = fmt.Sprintf("%s%s: %d; ",additiveLogStr,tType, additiveValue)
+			additiveLogStr = fmt.Sprintf("%ssubtract: %d; ",additiveLogStr,tValue)
 		case "advantage":
 			if timesToRoll != 1 {
 				panic("advantage cannot be used with multiple rolls")
 			}
-			evalValue = 2
 			if vantageTrack == "normal" {
 				vantageTrack = "advantage"
+				evalValue = 2
 			} else if vantageTrack == "disadvantage" {
 				vantageTrack = "normal"
+				evalValue = 1
+				sortDirection = "descending"
 			}
 			vantageLogStr = fmt.Sprintf("vantage: %s; ",vantageTrack)
 		case "disadvantage":
 			if timesToRoll != 1 {
 				panic("disadvantage cannot be used with multiple rolls")
 			}
-			evalValue = 2
+
 			if vantageTrack == "normal" {
 				vantageTrack = "disadvantage"
+				sortDirection = "ascending"
+				evalValue = 2
 			} else if vantageTrack == "advantage" {
 				vantageTrack = "normal"
+				evalValue = 1
+				sortDirection = "descending"
 			}
 			vantageLogStr = fmt.Sprintf("vantage: %s; ",vantageTrack)
 		}
 	}
-	rolls, err :=getRolls(sides,timesToRoll)
+	rolls, err :=getRolls(sides,evalValue)
     if err != nil {
 		panic(err)
 	}
-	if sortDirection == "ascending" {
+	if sortDirection == "descending" {
 		sort.Sort(sort.Reverse(sort.IntSlice(*rolls)))
 	} else {
 		sort.Ints(*rolls)
@@ -206,6 +209,7 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 	for i := 0; i < len(usedSlice); i++ {
 		result = result + usedSlice[i]
 	}
+	result += additiveValue
 	reqLogStr = fmt.Sprintf("%s%s%s", vantageLogStr, keepLogStr, additiveLogStr)
 
 	return &roll{
@@ -214,6 +218,7 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 		TimesToRoll:    timesToRoll,
 		RollsGenerated: *rolls,
 		RollsUsed:      usedSlice,
+		AdditiveValue:  additiveValue,
 		Result:         result,
 	}, nil
 }
