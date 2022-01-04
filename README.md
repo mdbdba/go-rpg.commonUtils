@@ -1,2 +1,2 @@
-# go-rpg.roller
-packages handling rolling functionality for the go-rpg collection
+# go-rpg.commonUtils
+packages handling common utilities for the go-rpg collection

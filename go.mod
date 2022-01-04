@@ -1,4 +1,4 @@
-module github.com/mdbdba/go_rpg_roller
+module github.com/mdbdba/go_rpg_commonUtils
 
 go 1.17
 

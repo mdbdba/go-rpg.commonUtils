@@ -1,9 +1,9 @@
-package go_rpg_roller
+package roll
 
 import (
 	"fmt"
-	"testing"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestBasic(t *testing.T) {

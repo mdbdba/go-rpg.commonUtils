@@ -1,13 +1,13 @@
-package go_rpg_roller
+package roll
 
 import (
 	"crypto/rand"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"sort"
 	"strconv"
 	"strings"
-	"encoding/json"
 )
 
 type roll struct {
