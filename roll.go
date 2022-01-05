@@ -1,11 +1,10 @@
-package roll
+package commonUtils
 
 import (
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -20,18 +19,6 @@ type roll struct {
 	Result int
 }
 
-func IntSliceToString(src []int) (tgt string) {
-	tgt ="["
-	for i:=0; i<len(src);i++ {
-		joinChr := ", "
-		if i == 0 {
-			joinChr = ""
-		}
-		tgt = fmt.Sprintf("%s%s%d", tgt,joinChr,src[i])
-	}
-	tgt = fmt.Sprintf("%s]", tgt)
-	return
-}
 func (r *roll) ToJson() string {
 	j, err := json.Marshal(r)
 	if err != nil {
@@ -197,9 +184,9 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 		panic(err)
 	}
 	if sortDirection == "descending" {
-		sort.Sort(sort.Reverse(sort.IntSlice(*rolls)))
+		SortDescendingIntSlice(*rolls)
 	} else {
-		sort.Ints(*rolls)
+		SortAscendingIntSlice(*rolls)
 	}
 	usedSlice := *rolls
 	if evalValue != keepValue {
