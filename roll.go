@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-type roll struct {
+// Roll struct containing everything you wanted to know about a roll
+type Roll struct {
 	Options string
 	Sides   int
 	TimesToRoll int
@@ -19,23 +20,23 @@ type roll struct {
 	Result int
 }
 
-func (r *roll) ToJson() string {
+func (r *Roll) ToJson() string {
 	j, err := json.Marshal(r)
 	if err != nil {
-		panic("Issue converting roll to json object")
+		panic("Issue converting Roll to json object")
 	}
 	return string(j)
 }
 
-func (r *roll) ToPrettyString() string {
+func (r *Roll) ToPrettyString() string {
 	return r.ConvertToString(true)
 }
 
-func (r *roll) ToString() string {
+func (r *Roll) ToString() string {
 	return r.ConvertToString(false)
 }
 
-func (r *roll) ConvertToString(p bool) (s string) {
+func (r *Roll) ConvertToString(p bool) (s string) {
 	usedStr := IntSliceToString(r.RollsUsed)
 	genStr := IntSliceToString(r.RollsGenerated)
 	pStr := ""
@@ -76,7 +77,7 @@ func getRolls(sides int, timesToRoll int) (*[]int, error) {
 // Expectations:
 //   * advantage and disadvantage cancel each other out.
 //     If advantage and disadvantage are both passed, then the
-//     result will be a normal roll.
+//     result will be a normal Roll.
 //   * advantage and disadvantage do not stack.
 //   * it is assumed that rolling with advantage or disadvantage the
 //     number of rolls is = 1. If something other than 1 is passed in this
@@ -84,7 +85,7 @@ func getRolls(sides int, timesToRoll int) (*[]int, error) {
 //   * using the variadic function for the Options parameter will allow us
 //     to simplify all the different combinations by just evaluating them here.
 //
-func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error) {
+func Perform(sides int, timesToRoll int, options ...string ) (r *Roll, err error) {
 	var reqLogStr string  // boil down all the Options to an easy to read string
 	var vantageLogStr string
 	var keepLogStr string
@@ -199,7 +200,7 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *roll, err error
 	result += additiveValue
 	reqLogStr = fmt.Sprintf("%s%s%s", vantageLogStr, keepLogStr, additiveLogStr)
 
-	return &roll{
+	return &Roll{
 		Options:        reqLogStr,
 		Sides:          sides,
 		TimesToRoll:    timesToRoll,
