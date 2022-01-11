@@ -18,6 +18,7 @@ type Roll struct {
 	RollsUsed []int
 	AdditiveValue int
 	Result int
+	CtxRef string
 }
 
 func (r *Roll) ToJson() string {
@@ -44,14 +45,17 @@ func (r *Roll) ConvertToString(p bool) (s string) {
 		pStr = "\n\t"
 	}
 	s = fmt.Sprintf("ROLL -- %sSides: %d, %sTimesToRoll: %d, " +
-		"%sOptions: [%s], %sAdditiveValue: %d, %sResult: %d, %sRollsUsed: %s, %sRollsGenerated: %s\n",
+		"%sOptions: [%s], %sAdditiveValue: %d, %sResult: %d, %sRollsUsed: %s, "+
+		"%sRollsGenerated: %s, %sCtxRef: %s\n",
 		pStr, r.Sides,
 		pStr, r.TimesToRoll,
 		pStr, strings.TrimSpace(r.Options),
 		pStr, r.AdditiveValue,
 		pStr, r.Result,
 		pStr, usedStr,
-		pStr, genStr)
+		pStr, genStr,
+		pStr, r.CtxRef,
+	)
 	return
 }
 
@@ -85,7 +89,7 @@ func getRolls(sides int, timesToRoll int) (*[]int, error) {
 //   * using the variadic function for the Options parameter will allow us
 //     to simplify all the different combinations by just evaluating them here.
 //
-func Perform(sides int, timesToRoll int, options ...string ) (r *Roll, err error) {
+func Perform(sides int, timesToRoll int, CtxRef string, options ...string ) (r *Roll, err error) {
 	var reqLogStr string  // boil down all the Options to an easy to read string
 	var vantageLogStr string
 	var keepLogStr string
@@ -208,6 +212,7 @@ func Perform(sides int, timesToRoll int, options ...string ) (r *Roll, err error
 		RollsUsed:      usedSlice,
 		AdditiveValue:  additiveValue,
 		Result:         result,
+		CtxRef:         CtxRef,
 	}, nil
 }
 

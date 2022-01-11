@@ -11,7 +11,7 @@ func TestBasic(t *testing.T) {
 	opts := []string{"drop lowest 1"}
 	pSides := 6
 	pTimesToRoll := 4
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Basic", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +51,7 @@ func TestAdvantage(t *testing.T) {
 	opts := []string{"advantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Advantage", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +92,7 @@ func TestDoubleAdvantage(t *testing.T) {
 	opts := []string{"advantage","advantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Double Advantage", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -134,7 +134,7 @@ func TestDisadvantage(t *testing.T) {
 	opts := []string{"disadvantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Disadvantage", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -176,7 +176,7 @@ func TestDoubleDisadvantage(t *testing.T) {
 	opts := []string{"disadvantage", "disadvantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Double Disadvantage", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -218,7 +218,7 @@ func TestAdvDis(t *testing.T) {
 	opts := []string{"advantage", "disadvantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Adv Dis", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -259,7 +259,7 @@ func TestDisAdv(t *testing.T) {
 	opts := []string{"disadvantage","advantage"}
 	pSides := 20
 	pTimesToRoll := 1
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Dis Adv", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -299,7 +299,7 @@ func TestAdd(t *testing.T) {
 	opts := []string{"add 3"}
 	pSides := 6
 	pTimesToRoll := 5
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Add", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -342,7 +342,7 @@ func TestSubtract(t *testing.T) {
 	opts := []string{"subtract 3"}
 	pSides := 6
 	pTimesToRoll := 5
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Subtract", opts...)
 	if err != nil {
 		panic(err)
 	}
@@ -385,7 +385,7 @@ func TestMultiAdds(t *testing.T) {
 	opts := []string{"subtract 3", "add 10", "subtract 4"}
 	pSides := 6
 	pTimesToRoll := 5
-	rollObj, err := Perform(pSides,pTimesToRoll, opts...)
+	rollObj, err := Perform(pSides,pTimesToRoll, "Test Multi Adds", opts...)
 	if err != nil {
 		panic(err)
 	}
