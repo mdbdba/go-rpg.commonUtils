@@ -1,0 +1,24 @@
+{
+        "db_users": [
+                {
+                        "system": "dnd",
+                        "version": "5e",
+                        "env": "dev",
+                        "host": "localhost",
+                        "port": 5432,
+                        "user": "dbuser1",
+                        "password": "supersecretPassHere123456789",
+                        "dbname": "webuser"
+                },
+                {
+                        "system": "dnd",
+                        "version": "5e",
+                        "env": "dev",
+                        "host": "localhost",
+                        "port": 5432,
+                        "user": "dnd-dbuser1",
+                        "password": "begoodandusediffpasshere12345",
+                        "dbname": "dnd-character"
+                }
+        ]
+}
