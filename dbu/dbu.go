@@ -116,8 +116,8 @@ func (dbo *DBo) CleanUpAndClose() error {
 }
 
 // Exec performs a query on the db that doesn't return rows.
-func (dbo *DBo) Exec(Query string, Args ...interface{}) (sql.Result, error) {
-	result, err := dbo.DB.Exec(Query, Args...)
+func (dbo *DBo) Exec(query string, args ...interface{}) (sql.Result, error) {
+	result, err := dbo.DB.Exec(query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -125,9 +125,9 @@ func (dbo *DBo) Exec(Query string, Args ...interface{}) (sql.Result, error) {
 }
 
 // QueryReturnId performs a query on the db that doesn't return rows.
-func (dbo *DBo) QueryReturnId(Query string, Args ...interface{}) (int64, error) {
+func (dbo *DBo) QueryReturnId(query string, args ...interface{}) (int64, error) {
 	var id int64
-	row := dbo.DB.QueryRow(Query, Args...)
+	row := dbo.DB.QueryRow(query, args...)
 	err := row.Scan(&id)
 	if err != nil {
 		return -1, err
@@ -136,4 +136,12 @@ func (dbo *DBo) QueryReturnId(Query string, Args ...interface{}) (int64, error) 
 		return -1, row.Err()
 	}
 	return id, nil
+}
+
+func (dbo *DBo) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	rows, err := dbo.DB.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

@@ -1,6 +1,7 @@
 package dbu
 
 import (
+	"database/sql"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
@@ -58,6 +59,49 @@ func TestQueryReturnId(t *testing.T) {
 
 	assert.GreaterOrEqual(t, id, int64(1))
 	assert.Equal(t, 0, observedLogs.Len())
+	err = dbo.CleanUpAndClose()
+	assert.Equal(t, nil, err)
+}
+
+func TestQuery(t *testing.T) {
+	observedZapCore, observedLogs := observer.New(zap.InfoLevel)
+	observedLoggerSugared := zap.New(observedZapCore).Sugar()
+
+	dbo, err := OpenConn(observedLoggerSugared, "dnd", "5e",
+		"dev", "webuser")
+	assert.Equal(t, nil, err)
+
+	rows, err := dbo.Query(`select first_name, email, created_at from public."user" `+
+		`where first_name=$1 and email=$2`,
+		"demotestuser", "demotestuser@mycrazydomain.io")
+	assert.Equal(t, nil, err)
+	rowCnt := 0
+	for rows.Next() {
+		rowCnt++
+		var f sql.NullString
+		var fs string
+		var e sql.NullString
+		var es string
+		var d sql.NullTime
+		err := rows.Scan(&f, &e, &d)
+		assert.Equal(t, nil, err)
+		if f.Valid {
+			fs = f.String
+		} else {
+			fs = "Unknown"
+		}
+		if e.Valid {
+			es = e.String
+		} else {
+			es = "Unknown"
+		}
+		assert.Equal(t, true, d.Valid)
+		assert.Equal(t, "demotestuser", fs)
+		assert.Equal(t, "demotestuser@mycrazydomain.io", es)
+	}
+	assert.Equal(t, 2, rowCnt)
+	assert.Equal(t, 0, observedLogs.Len())
+	rows.Close()
 	err = dbo.CleanUpAndClose()
 	assert.Equal(t, nil, err)
 }
