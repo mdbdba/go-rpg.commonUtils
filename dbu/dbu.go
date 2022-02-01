@@ -1,10 +1,12 @@
 package dbu
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/cockroachdb/cockroach-go/v2/crdb/crdbpgx"
+	"github.com/jackc/pgx/v4"
 	_ "github.com/lib/pq"
 	"go.uber.org/zap"
 	"io/ioutil"
@@ -12,6 +14,8 @@ import (
 )
 
 var (
+	// ErrConfigInfo is returned when the database connection config info could not be parsed
+	ErrConfigInfo = errors.New("dbu: could not make sense out of the db config info")
 	// ErrConnFileNotFound is returned when connection info file cannot be found
 	ErrConnFileNotFound = errors.New("dbu: connection info file not found")
 	// ErrConnFileNotReadable is returned when connection info file cannot be read
@@ -42,7 +46,7 @@ type DbUser struct {
 
 // DBo struct encapsulates sql.DB to add new functions
 type DBo struct {
-	*sql.DB
+	*pgx.Conn
 	logger  *zap.SugaredLogger
 	System  string
 	Version string
@@ -57,9 +61,8 @@ func (du *DbUser) ToString() string {
 }
 
 func (du *DbUser) getConnString() string {
-	return fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		du.Host, du.Port, du.User, du.Password, du.Dbname)
+	return fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=require", du.User, du.Password,
+		du.Host, du.Port, du.Dbname)
 }
 
 // OpenConn creates a db connection to one of the postgres dbs
@@ -73,20 +76,31 @@ func OpenConn(logger *zap.SugaredLogger, system string,
 	if err != nil {
 		return nil, ErrConnFileNotReadable
 	}
-	file.Close()
+	err = file.Close()
+	if err != nil {
+		return nil, err
+	}
 	var dbusers DbUsers
-	json.Unmarshal(byteValue, &dbusers)
+	err = json.Unmarshal(byteValue, &dbusers)
+	if err != nil {
+		return nil, err
+	}
 	for i := 0; i < len(dbusers.DbUsers); i++ {
 		if system == dbusers.DbUsers[i].System &&
 			version == dbusers.DbUsers[i].Version &&
 			env == dbusers.DbUsers[i].Env &&
 			dbname == dbusers.DbUsers[i].Dbname {
 			connInfo := dbusers.DbUsers[i].getConnString()
-			db, err := sql.Open("postgres", connInfo)
+			config, err := pgx.ParseConfig(connInfo)
+			if err != nil {
+				return nil, ErrConfigInfo
+			}
+			//db, err := sql.Open("postgres", connInfo)
+			db, err := pgx.ConnectConfig(context.Background(), config)
 			if err != nil {
 				return nil, ErrCouldNotOpenDB
 			}
-			err = db.Ping()
+			err = db.Ping(context.Background())
 			if err != nil {
 				return nil, ErrDBUnreachable
 			}
@@ -108,7 +122,15 @@ func OpenConn(logger *zap.SugaredLogger, system string,
 // CleanUpAndClose handles any cleanup that needs to happen and closes
 // the db connection.
 func (dbo *DBo) CleanUpAndClose() error {
-	err := dbo.DB.Close()
+	err := dbo.Conn.Close(context.Background())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func performExec(ctx context.Context, tx pgx.Tx, query string, args ...interface{}) error {
+	_, err := tx.Exec(ctx, query, args...)
 	if err != nil {
 		return err
 	}
@@ -116,30 +138,31 @@ func (dbo *DBo) CleanUpAndClose() error {
 }
 
 // Exec performs a query on the db that doesn't return rows.
-func (dbo *DBo) Exec(query string, args ...interface{}) (sql.Result, error) {
-	result, err := dbo.DB.Exec(query, args...)
+func (dbo *DBo) Exec(ctx context.Context, query string, args ...interface{}) error {
+	err := crdbpgx.ExecuteTx(ctx, dbo.Conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
+		return performExec(ctx, tx, query, args...)
+
+	})
+	//result, err := dbo.Conn.Exec(ctx, query, args...)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return result, nil
+	return nil
 }
 
 // QueryReturnId performs a query on the db that doesn't return rows.
-func (dbo *DBo) QueryReturnId(query string, args ...interface{}) (int64, error) {
+func (dbo *DBo) QueryReturnId(ctx context.Context, query string, args ...interface{}) (int64, error) {
 	var id int64
-	row := dbo.DB.QueryRow(query, args...)
+	row := dbo.Conn.QueryRow(ctx, query, args...)
 	err := row.Scan(&id)
 	if err != nil {
 		return -1, err
 	}
-	if row.Err() != nil {
-		return -1, row.Err()
-	}
 	return id, nil
 }
 
-func (dbo *DBo) Query(query string, args ...interface{}) (*sql.Rows, error) {
-	rows, err := dbo.DB.Query(query, args...)
+func (dbo *DBo) Query(ctx context.Context, query string, args ...interface{}) (pgx.Rows, error) {
+	rows, err := dbo.Conn.Query(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}

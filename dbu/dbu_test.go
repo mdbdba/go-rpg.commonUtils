@@ -1,6 +1,7 @@
 package dbu
 
 import (
+	"context"
 	"database/sql"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -30,15 +31,15 @@ func TestExec(t *testing.T) {
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
 
-	exec, err := dbo.Exec(`Insert into public."user"(first_name, email, `+
+	err = dbo.Exec(context.Background(), `Insert into public."user"(first_name, email, `+
 		`created_at, updated_at) values ($1, $2, now(), now())`,
 		"demotestuser", "demotestuser@mycrazydomain.io")
 	assert.Equal(t, nil, err)
 	// lastId, err := exec.LastInsertId()
 	// last Insert Id is not supported by the driver
-	nbrAffected, err := exec.RowsAffected()
+	// nbrAffected, err := exec.RowsAffected()
 	assert.Equal(t, nil, err)
-	assert.Equal(t, int64(1), nbrAffected)
+	// assert.Equal(t, int64(1), nbrAffected)
 	assert.Equal(t, 0, observedLogs.Len())
 	err = dbo.CleanUpAndClose()
 	assert.Equal(t, nil, err)
@@ -52,7 +53,7 @@ func TestQueryReturnId(t *testing.T) {
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
 
-	id, err := dbo.QueryReturnId(`Insert into public."user"(first_name, email, `+
+	id, err := dbo.QueryReturnId(context.Background(), `Insert into public."user"(first_name, email, `+
 		`created_at, updated_at) values ($1, $2, now(), now()) returning id`,
 		"demotestuser", "demotestuser@mycrazydomain.io")
 	assert.Equal(t, nil, err)
@@ -71,19 +72,20 @@ func TestQuery(t *testing.T) {
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
 
-	rows, err := dbo.Query(`select first_name, email, created_at from public."user" `+
+	rows, err := dbo.Query(context.Background(), `select id, first_name, email, created_at from public."user" `+
 		`where first_name=$1 and email=$2`,
 		"demotestuser", "demotestuser@mycrazydomain.io")
 	assert.Equal(t, nil, err)
 	rowCnt := 0
 	for rows.Next() {
 		rowCnt++
+		var i int64
 		var f sql.NullString
 		var fs string
 		var e sql.NullString
 		var es string
 		var d sql.NullTime
-		err := rows.Scan(&f, &e, &d)
+		err := rows.Scan(&i, &f, &e, &d)
 		assert.Equal(t, nil, err)
 		if f.Valid {
 			fs = f.String
@@ -112,11 +114,11 @@ func TestUserCleanup(t *testing.T) {
 	dbo, err := OpenConn(observedLoggerSugared, "dnd", "5e",
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
-	exec, err := dbo.Exec("Delete from public.\"user\" where first_name = 'demotestuser'")
+	err = dbo.Exec(context.Background(), "Delete from public.\"user\" where first_name = 'demotestuser'")
 	assert.Equal(t, nil, err)
-	nbrAffected, err := exec.RowsAffected()
-	assert.Equal(t, nil, err)
-	assert.GreaterOrEqual(t, nbrAffected, int64(1))
+	// nbrAffected, err := exec.RowsAffected()
+	// assert.Equal(t, nil, err)
+	// assert.GreaterOrEqual(t, nbrAffected, int64(1))
 	assert.Equal(t, 0, observedLogs.Len())
 	err = dbo.CleanUpAndClose()
 	assert.Equal(t, nil, err)
