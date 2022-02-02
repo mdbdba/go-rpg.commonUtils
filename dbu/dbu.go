@@ -29,6 +29,8 @@ var (
 	ErrDBUnreachable = errors.New("dbu: DB unreachable")
 	// ErrUnexpectedEffectedCnt is returned when an expected number of effected rows is not matched
 	ErrUnexpectedEffectedCnt = errors.New("dbu: unexpected effected count")
+	// ErrNotFound is returned when a query returns no rows
+	ErrNotFound = errors.New("dbu: no records found")
 )
 
 type DbUsers struct {
@@ -140,6 +142,8 @@ func performExec(ctx context.Context, tx pgx.Tx, expected int, query string, arg
 		if result.RowsAffected() != int64(expected) {
 			return ErrUnexpectedEffectedCnt
 		}
+	} else if result.RowsAffected() == int64(0) {
+		return ErrNotFound
 	}
 	return nil
 }
@@ -148,7 +152,6 @@ func performExec(ctx context.Context, tx pgx.Tx, expected int, query string, arg
 func (dbo *DBo) Exec(ctx context.Context, expected int, query string, args ...interface{}) error {
 	err := crdbpgx.ExecuteTx(ctx, dbo.Conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return performExec(ctx, tx, expected, query, args...)
-
 	})
 	if err != nil {
 		return err
