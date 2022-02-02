@@ -31,7 +31,7 @@ func TestExec(t *testing.T) {
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
 
-	err = dbo.Exec(context.Background(), `Insert into public."user"(first_name, email, `+
+	err = dbo.Exec(context.Background(), 1, `Insert into public."user"(first_name, email, `+
 		`created_at, updated_at) values ($1, $2, now(), now())`,
 		"demotestuser", "demotestuser@mycrazydomain.io")
 	assert.Equal(t, nil, err)
@@ -114,7 +114,7 @@ func TestUserCleanup(t *testing.T) {
 	dbo, err := OpenConn(observedLoggerSugared, "dnd", "5e",
 		"dev", "webuser")
 	assert.Equal(t, nil, err)
-	err = dbo.Exec(context.Background(), "Delete from public.\"user\" where first_name = 'demotestuser'")
+	err = dbo.Exec(context.Background(), 2, "Delete from public.\"user\" where first_name = 'demotestuser'")
 	assert.Equal(t, nil, err)
 	// nbrAffected, err := exec.RowsAffected()
 	// assert.Equal(t, nil, err)

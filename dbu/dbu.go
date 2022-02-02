@@ -27,6 +27,8 @@ var (
 	ErrCouldNotOpenDB = errors.New("dbu: could not open DB")
 	// ErrDBUnreachable is returned when the DB is unreachable.
 	ErrDBUnreachable = errors.New("dbu: DB unreachable")
+	// ErrUnexpectedEffectedCnt is returned when an expected number of effected rows is not matched
+	ErrUnexpectedEffectedCnt = errors.New("dbu: unexpected effected count")
 )
 
 type DbUsers struct {
@@ -129,21 +131,25 @@ func (dbo *DBo) CleanUpAndClose() error {
 	return nil
 }
 
-func performExec(ctx context.Context, tx pgx.Tx, query string, args ...interface{}) error {
-	_, err := tx.Exec(ctx, query, args...)
+func performExec(ctx context.Context, tx pgx.Tx, expected int, query string, args ...interface{}) error {
+	result, err := tx.Exec(ctx, query, args...)
 	if err != nil {
 		return err
+	}
+	if expected != -1 {
+		if result.RowsAffected() != int64(expected) {
+			return ErrUnexpectedEffectedCnt
+		}
 	}
 	return nil
 }
 
 // Exec performs a query on the db that doesn't return rows.
-func (dbo *DBo) Exec(ctx context.Context, query string, args ...interface{}) error {
+func (dbo *DBo) Exec(ctx context.Context, expected int, query string, args ...interface{}) error {
 	err := crdbpgx.ExecuteTx(ctx, dbo.Conn, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		return performExec(ctx, tx, query, args...)
+		return performExec(ctx, tx, expected, query, args...)
 
 	})
-	//result, err := dbo.Conn.Exec(ctx, query, args...)
 	if err != nil {
 		return err
 	}
